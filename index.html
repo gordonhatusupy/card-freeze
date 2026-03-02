@@ -1809,6 +1809,8 @@
 
         updateCurrentDate();
         updateScenarioText();
+        // Bars depend on layout; re-render after the browser has painted
+        requestAnimationFrame(() => requestAnimationFrame(() => renderDollarMarkers()));
       } catch (e) { /* ignore corrupt data */ }
     }
 
