@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      display: flex;
+      height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      background: white;
+      border-radius: 16px;
+      margin: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e5e5e7;
+      flex-shrink: 0;
+      width: 300px;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 42vh;
+    }
+
+    .container {
+      display: flex;
+      align-items: flex-start;
+    }
+
+
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 13px;
+      color: #666;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .geist-select {
+      appearance: none;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      height: 32px;
+      padding: 0 28px 0 10px;
+      font: 14px/1 'Inter', sans-serif;
+      color: #171717;
+      background: #fff url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center;
+      cursor: pointer;
+      outline: none;
+      width: 160px;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .geist-select:hover {
+      border-color: #999;
+    }
+
+    .geist-select:focus {
+      border-color: #000;
+      box-shadow: 0 0 0 1px #000;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0;
+    }
+
+    .section-header h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #171717;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .section-header.active {
+      margin-bottom: 16px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: #e5e5e7;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 200ms ease;
+      flex-shrink: 0;
+    }
+
+    .toggle.on {
+      background: #171717;
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 200ms ease;
+    }
+
+    .toggle.on::after {
+      transform: translateX(16px);
+    }
+
+    .toggle.disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .section-body {
+      display: none;
+    }
+
+    .section-body.visible {
+      display: block;
+    }
+
+    .sidebar-section {
+      padding: 16px 0;
+      border-bottom: 1px solid #e5e5e7;
+    }
+
+    .sidebar-section:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .sidebar-section:first-child {
+      padding-top: 0;
+    }
+
+    .custom-number-input {
+      appearance: none;
+      -moz-appearance: textfield;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      height: 32px;
+      padding: 0 10px;
+      font: 14px/1 'Inter', sans-serif;
+      color: #171717;
+      outline: none;
+      width: 80px;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .custom-number-input::-webkit-inner-spin-button,
+    .custom-number-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .custom-number-input:hover {
+      border-color: #999;
+    }
+
+    .custom-number-input:focus {
+      border-color: #000;
+      box-shadow: 0 0 0 1px #000;
+    }
+
+    .custom-row {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .custom-row.visible {
+      display: flex;
+    }
+
+    .custom-row .unit-label {
+      font-size: 13px;
+      color: #666;
+      font-family: 'Inter', sans-serif;
+    }
+
+
+    .timeline {
+      display: flex;
+      align-items: flex-end;
+      align-self: flex-end;
+      position: relative;
+    }
+
+    .month-group {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-right: 16px;
+    }
+
+    .month-group:last-child {
+      margin-right: 0;
+    }
+
+    .month-label {
+      font-size: 12px;
+      color: #B0B0B0;
+      margin-bottom: 32px;
+      user-select: none;
+    }
+
+    .ticks {
+      display: flex;
+      align-items: flex-end;
+      height: 23px;
+      overflow: visible;
+    }
+
+    .tick {
+      position: relative;
+      width: 1px;
+      height: 11px;
+      background: #D0D0D0;
+      margin: 0 5px;
+      border-radius: 0;
+      transition: height 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  width 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  margin 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  background 150ms ease,
+                  border-radius 150ms ease;
+      will-change: height, width;
+    }
+
+    .tick.selected {
+      width: 7px;
+      height: 23px;
+      margin: 0 2px;
+      background: lightblue;
+      border-radius: 3px;
+    }
+
+    .tick.current {
+      width: 7px;
+      height: 23px;
+      margin: 0 2px;
+      background: #070707;
+      border-radius: 3px;
+    }
+
+    .tick::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      right: -5px;
+      top: -10px;
+      bottom: 0;
+    }
+
+    .tick.ruler::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 1px;
+      top: -150vh;
+      height: 300vh;
+      background: #e8e8e8;
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .tick:not(.disabled):hover {
+      height: 20px;
+      background: #000;
+    }
+
+    .expense-row {
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+    }
+
+    .expense-lane {
+      display: flex;
+      align-items: center;
+      height: 24px;
+    }
+
+    .expense-slot {
+      position: relative;
+      width: 1px;
+      height: 24px;
+      margin: 0 5px;
+      flex-shrink: 0;
+    }
+
+    .expense-slot.wide {
+      width: 7px;
+      margin: 0 2px;
+    }
+
+    .expense-circle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #999;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 2;
+      animation: markerPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .expense-circle.eval {
+      background: lightblue;
+      color: #4a90a4;
+    }
+
+    .expense-circle.non-compliant {
+      background: #fdd;
+      color: #c44;
+    }
+
+    .expense-circle.eval.non-compliant {
+      background: #fdd;
+      color: #c44;
+    }
+
+    .expense-circle:hover {
+      transform: translate(-50%, -50%) scale(1.15);
+      background: #e0e0e0;
+      color: #666;
+      transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+    }
+
+    .expense-circle.eval:hover {
+      background: #8fd4e8;
+      color: #3a7a8a;
+    }
+
+    .expense-circle.non-compliant:hover {
+      background: #f9b4b4;
+      color: #a33;
+    }
+
+    .overdue-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    @keyframes markerPop {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+      }
+      60% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .receipt-tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'Inter', sans-serif;
+      opacity: 0;
+      transform: scale(0.9) translateY(4px);
+      transition: opacity 120ms ease, transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 20;
+      width: 200px;
+    }
+
+    .receipt-tooltip.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    .receipt-date {
+      font-size: 11px;
+      color: #a3a3a3;
+      margin-bottom: 6px;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 13px;
+      color: #171717;
+    }
+
+    .receipt-vendor {
+      font-weight: 500;
+    }
+
+    .receipt-amount {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .receipt-category {
+      font-size: 11px;
+      color: #a3a3a3;
+      margin-top: 4px;
+    }
+
+    .countdown-label {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #999;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .freeze-label {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #999;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 120ms ease, transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Exclude multi-select */
+    .exclude-select {
+      position: relative;
+    }
+
+    .exclude-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      min-height: 32px;
+      padding: 4px 28px 4px 10px;
+      font: 14px/1 'Inter', sans-serif;
+      color: #a3a3a3;
+      background: #fff url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 8px center;
+      cursor: pointer;
+      outline: none;
+      width: 252px;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .exclude-trigger:hover {
+      border-color: #999;
+    }
+
+    .exclude-trigger.open {
+      border-color: #000;
+      box-shadow: 0 0 0 1px #000;
+    }
+
+    .exclude-trigger.has-selection {
+      color: #171717;
+    }
+
+    .exclude-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f5f5f5;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      color: #171717;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .exclude-chip-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      color: #a3a3a3;
+      border-radius: 2px;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .exclude-chip-remove:hover {
+      color: #171717;
+      background: #e5e5e5;
+    }
+
+    .exclude-placeholder {
+      pointer-events: none;
+    }
+
+    .exclude-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      width: 252px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+      z-index: 20;
+      display: none;
+      overflow: hidden;
+    }
+
+    .exclude-dropdown.open {
+      display: block;
+    }
+
+    .exclude-search-wrap {
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .exclude-search {
+      width: 100%;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      height: 32px;
+      padding: 0 10px 0 30px;
+      font: 14px/1 'Inter', sans-serif;
+      color: #171717;
+      outline: none;
+      background: #fff;
+      transition: border-color 150ms ease;
+    }
+
+    .exclude-search:focus {
+      border-color: #999;
+    }
+
+    .exclude-search-wrap {
+      position: relative;
+    }
+
+    .exclude-search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a3a3a3;
+      pointer-events: none;
+    }
+
+    .exclude-list {
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .exclude-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #171717;
+      font-family: 'Inter', sans-serif;
+      transition: background 100ms ease;
+    }
+
+    .exclude-item:hover {
+      background: #fafafa;
+    }
+
+    .exclude-item.selected {
+      background: #f5f5f5;
+    }
+
+    .exclude-item-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .exclude-item-label {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .exclude-empty {
+      padding: 12px;
+      text-align: center;
+      font-size: 13px;
+      color: #a3a3a3;
+    }
+
+    .scenario-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .scenario-section .scenario-placeholder {
+      font-size: 13px;
+      color: #a3a3a3;
+      padding: 8px 0;
+    }
+
+    .rule-block {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      opacity: 0;
+      transform: translateY(4px);
+      animation: ruleIn 300ms ease forwards;
+    }
+
+    .rule-block:last-child {
+      border-bottom: none;
+    }
+
+    .rule-block .rule-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a3a3a3;
+      margin-top: 1px;
+    }
+
+    .rule-block .rule-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .rule-block .rule-content {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #525252;
+    }
+
+    .rule-block .rule-content strong {
+      color: #171717;
+      font-weight: 600;
+    }
+
+    .rule-block .rule-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #171717;
+      white-space: nowrap;
+    }
+
+    @keyframes ruleIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Password gate */
+    .pw-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .pw-gate.hidden {
+      display: none;
+    }
+
+    .pw-gate label {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .pw-gate input {
+      appearance: none;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      height: 36px;
+      padding: 0 12px;
+      font: 14px/1 'Inter', sans-serif;
+      color: #171717;
+      outline: none;
+      width: 220px;
+      text-align: center;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .pw-gate input:focus {
+      border-color: #000;
+      box-shadow: 0 0 0 1px #000;
+    }
+
+    .pw-gate input.error {
+      border-color: #e5484d;
+      box-shadow: 0 0 0 1px #e5484d;
+      animation: shake 300ms ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .app-content {
+      display: none;
+      height: 100vh;
+      width: 100%;
+    }
+
+    .app-content.visible {
+      display: flex;
+    }
+
+    .reset-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #999;
+      transition: border-color 150ms ease, color 150ms ease, transform 150ms ease;
+      z-index: 10;
+    }
+
+    .reset-btn:hover {
+      border-color: #999;
+      color: #171717;
+    }
+
+    .reset-btn:active {
+      transform: scale(0.92);
+    }
+
+  </style>
+</head>
+<body>
+  <div class="pw-gate" id="pw-gate">
+    <label>Password</label>
+    <input type="password" id="pw-input" placeholder="Enter password..." autofocus>
+  </div>
+
+  <div class="app-content" id="app-content">
+  <button class="reset-btn" id="reset-btn" title="Reset all settings">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  </button>
+  <div class="sidebar">
+    <div class="control-group" style="margin-bottom: 20px;">
+      <label class="control-label">Current date</label>
+      <select class="geist-select" id="current-date">
+        <option value="">Select date...</option>
+      </select>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-header" id="deadlines-header">
+        <h2>Documentation deadlines</h2>
+        <div class="toggle" id="deadlines-toggle"></div>
+      </div>
+      <div class="section-body" id="deadlines-body">
+        <div class="control-group">
+          <label class="control-label">Mark overdue after</label>
+          <select class="geist-select" id="overdue-after">
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="custom">Custom...</option>
+          </select>
+          <div class="custom-row" id="custom-overdue-row">
+            <input type="number" class="custom-number-input" id="custom-overdue-days" min="1" max="365" placeholder="Days">
+            <span class="unit-label">days</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-header" id="suspend-header">
+        <h2>Auto-suspend</h2>
+        <div class="toggle disabled" id="suspend-toggle"></div>
+      </div>
+      <div class="section-body" id="suspend-body">
+        <div class="control-group">
+          <label class="control-label">Auto-freeze date</label>
+          <select class="geist-select" id="freeze-date">
+            <option value="">Select date...</option>
+          </select>
+        </div>
+
+        <div class="control-group" style="margin-top: 16px">
+          <label class="control-label">Exclude</label>
+          <div class="exclude-select" id="exclude-select">
+            <div class="exclude-trigger" id="exclude-trigger">
+              <span class="exclude-placeholder">ex. John Doe or Executives</span>
+            </div>
+            <div class="exclude-dropdown" id="exclude-dropdown">
+              <div class="exclude-search-wrap">
+                <svg class="exclude-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="exclude-search" id="exclude-search" type="text" placeholder="Search..." autocomplete="off">
+              </div>
+              <div class="exclude-list" id="exclude-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="scenario-section">
+        <!-- Scenario content will go here -->
+      </div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="container">
+<div class="timeline" id="timeline"></div>
+    </div>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+  <div class="receipt-tooltip" id="receipt-tooltip"></div>
+
+  <script>
+    const months = [
+      { name: 'Jan', days: 31, index: 0 },
+      { name: 'Feb', days: 28, index: 1 },
+      { name: 'Mar', days: 31, index: 2 },
+      { name: 'Apr', days: 30, index: 3 }
+    ];
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    const timeline = document.getElementById('timeline');
+    const tooltip = document.getElementById('tooltip');
+    const freezeSelect = document.getElementById('freeze-date');
+    const currentDateSelect = document.getElementById('current-date');
+
+    // Populate freeze date options (3–28)
+    for (let d = 3; d <= 28; d++) {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      freezeSelect.appendChild(opt);
+    }
+
+    // Populate current date options from timeline months
+    months.forEach(month => {
+      for (let d = 1; d <= month.days; d++) {
+        const opt = document.createElement('option');
+        opt.value = `${month.index}-${d}`;
+        opt.textContent = `${month.name} ${d}`;
+        currentDateSelect.appendChild(opt);
+      }
+    });
+
+    // Build DOM
+    months.forEach(month => {
+      const group = document.createElement('div');
+      group.className = 'month-group';
+
+      const label = document.createElement('div');
+      label.className = 'month-label';
+      label.textContent = month.name;
+      group.appendChild(label);
+
+      const ticks = document.createElement('div');
+      ticks.className = 'ticks';
+
+      for (let d = 1; d <= month.days; d++) {
+        const tick = document.createElement('div');
+        tick.className = 'tick';
+        const dayName = days[new Date(2026, month.index, d).getDay()];
+        tick.dataset.date = `${dayName}, ${month.name} ${d}`;
+        tick.dataset.day = d;
+        if (d < 3 || d > 28) tick.classList.add('disabled');
+        if (d === 1 || d === month.days) tick.classList.add('ruler');
+        ticks.appendChild(tick);
+      }
+
+      group.appendChild(ticks);
+
+      const expenseRow = document.createElement('div');
+      expenseRow.className = 'expense-row';
+      group.appendChild(expenseRow);
+
+      timeline.appendChild(group);
+    });
+
+    // SVG overlay for overdue bars
+    const overdueSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    overdueSvg.classList.add('overdue-overlay');
+    timeline.appendChild(overdueSvg);
+
+    // Receipt data per month
+    const receiptData = {
+      0: { // Jan
+        6:  { vendor: 'Uber', amount: '$50.00', category: 'Transportation' },
+        14: { vendor: 'Delta Airlines', amount: '$384.00', category: 'Travel' },
+        16: { vendor: 'Marriott Hotel', amount: '$219.00', category: 'Lodging' },
+        23: { vendor: 'Office Depot', amount: '$67.50', category: 'Supplies' },
+      },
+      1: { // Feb
+        4:  { vendor: 'Starbucks', amount: '$12.40', category: 'Meals' },
+        11: { vendor: 'AWS', amount: '$1,240.00', category: 'Software' },
+        19: { vendor: 'WeWork', amount: '$450.00', category: 'Office space' },
+      },
+      2: { // Mar
+        3:  { vendor: 'Lyft', amount: '$28.75', category: 'Transportation' },
+        10: { vendor: 'Adobe Creative', amount: '$54.99', category: 'Software' },
+        17: { vendor: 'United Airlines', amount: '$512.00', category: 'Travel' },
+        22: { vendor: 'Hilton', amount: '$189.00', category: 'Lodging' },
+        27: { vendor: 'Staples', amount: '$93.20', category: 'Supplies' },
+      },
+      3: { // Apr
+        7:  { vendor: 'Zoom', amount: '$149.90', category: 'Software' },
+        15: { vendor: 'DoorDash', amount: '$34.60', category: 'Meals' },
+        21: { vendor: 'FedEx', amount: '$27.80', category: 'Shipping' },
+      },
+    };
+
+    const receiptTooltip = document.getElementById('receipt-tooltip');
+
+    function getOverdueDays() {
+      const sel = document.getElementById('overdue-after');
+      if (sel.value === 'custom') {
+        const v = parseInt(document.getElementById('custom-overdue-days').value);
+        return v > 0 ? v : 7;
+      }
+      return parseInt(sel.value) || 7;
+    }
+
+    function renderDollarMarkers() {
+      // Cleanup
+      document.querySelectorAll('.expense-row').forEach(r => { r.innerHTML = ''; });
+      overdueSvg.innerHTML = '';
+
+      const curVal = currentDateSelect.value;
+      if (!curVal) return;
+      const [curMonth, curDay] = curVal.split('-').map(Number);
+      const curDate = new Date(2026, curMonth, curDay);
+
+      // Determine eval month: previous month from next freeze date
+      let evalMonthIndex = -1;
+      let nextFreezeFromCur = null;
+      let graceFreezeDate = null;
+      const freezeDay = parseInt(freezeSelect.value);
+      if (freezeDay) {
+        nextFreezeFromCur = getNextFreezeDate(curDate);
+        if (nextFreezeFromCur) {
+          evalMonthIndex = nextFreezeFromCur.getMonth() === 0 ? 11 : nextFreezeFromCur.getMonth() - 1;
+          const daysToFreeze = Math.round((nextFreezeFromCur - curDate) / (1000 * 60 * 60 * 24));
+          if (daysToFreeze <= 3) {
+            graceFreezeDate = new Date(nextFreezeFromCur.getTime() + 14 * 24 * 60 * 60 * 1000);
+          }
+        }
+      }
+
+      const overdueDays = getOverdueDays();
+
+      // First pass: collect all visible expenses and assign lane indices
+      const allExpenses = [];
+      months.forEach(month => {
+        const monthReceipts = receiptData[month.index];
+        if (!monthReceipts) return;
+        Object.keys(monthReceipts).sort((a, b) => a - b).forEach(dd => {
+          const expenseDate = new Date(2026, month.index, parseInt(dd));
+          if (expenseDate > curDate) return;
+          allExpenses.push({ monthIndex: month.index, day: parseInt(dd), expenseDate });
+        });
+      });
+
+      const numLanes = allExpenses.length;
+      if (numLanes === 0) return;
+
+      // Build lanes in each month group, one lane per visible expense
+      const slotsByKey = {}; // key: "monthIndex-day-lane"
+
+      months.forEach((month, mi) => {
+        const group = timeline.children[mi];
+        const expenseRow = group.querySelector('.expense-row');
+        const ticks = group.querySelector('.ticks');
+
+        for (let lane = 0; lane < numLanes; lane++) {
+          const laneDiv = document.createElement('div');
+          laneDiv.className = 'expense-lane';
+
+          for (let d = 1; d <= month.days; d++) {
+            const slot = document.createElement('div');
+            slot.className = 'expense-slot';
+            const tick = ticks.querySelector(`.tick[data-day="${d}"]`);
+            if (tick && (tick.classList.contains('selected') || tick.classList.contains('current'))) {
+              slot.classList.add('wide');
+            }
+            slot.dataset.day = d;
+            slot.dataset.monthIndex = month.index;
+            laneDiv.appendChild(slot);
+            slotsByKey[`${month.index}-${d}-${lane}`] = slot;
+          }
+
+          expenseRow.appendChild(laneDiv);
+        }
+      });
+
+      // Place circles and collect bar data
+      const barData = [];
+      allExpenses.forEach((exp, lane) => {
+        const { monthIndex, day, expenseDate } = exp;
+        const slot = slotsByKey[`${monthIndex}-${day}-${lane}`];
+        if (!slot) return;
+
+        const circle = document.createElement('span');
+        circle.className = 'expense-circle';
+        if (monthIndex === evalMonthIndex) circle.classList.add('eval');
+        const daysSince = Math.round((curDate - expenseDate) / (1000 * 60 * 60 * 24));
+        if (daysSince >= overdueDays) circle.classList.add('non-compliant');
+        circle.textContent = '$';
+        circle.dataset.monthIndex = monthIndex;
+        circle.dataset.day = day;
+        circle.style.animationDelay = `${lane * 40}ms`;
+        slot.appendChild(circle);
+
+        if (deadlinesOn) {
+          const overdueDate = new Date(2026, monthIndex, day + overdueDays);
+          const nextMonth1st = new Date(2026, overdueDate.getMonth() + 1, 1);
+          const suspendDate = suspendOn ? getNextFreezeDate(nextMonth1st) : null;
+          const hasGrace = graceFreezeDate && suspendDate && nextFreezeFromCur
+            && suspendDate.getTime() === nextFreezeFromCur.getTime();
+          barData.push({
+            slotEl: slot,
+            lane,
+            overdueDate,
+            suspendDate,
+            graceFreezeDate: hasGrace ? graceFreezeDate : null,
+            isOverdue: daysSince >= overdueDays
+          });
+        }
+      });
+
+      if (deadlinesOn && barData.length > 0) {
+        renderOverdueBars(overdueSvg, barData, slotsByKey);
+      }
+    }
+
+    function renderOverdueBars(svg, barData, slotsByKey) {
+      const timelineRect = timeline.getBoundingClientRect();
+      const maxDate = new Date(2026, 3, 30);
+
+      barData.forEach(({ slotEl, lane, overdueDate, suspendDate, graceFreezeDate, isOverdue }) => {
+        const startRect = slotEl.getBoundingClientRect();
+        const startX = startRect.left + startRect.width / 2 - timelineRect.left;
+        const startY = startRect.top + startRect.height / 2 - timelineRect.top;
+
+        // Clamp to Apr 30 (last visible day)
+        const clampedOverdue = overdueDate > maxDate ? maxDate : overdueDate;
+        const targetKey = `${clampedOverdue.getMonth()}-${clampedOverdue.getDate()}-${lane}`;
+        const targetSlot = slotsByKey[targetKey];
+        if (!targetSlot) return;
+
+        const endRect = targetSlot.getBoundingClientRect();
+        const endX = endRect.left + endRect.width / 2 - timelineRect.left;
+
+        // Connection line — always light grey
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', startX);
+        line.setAttribute('y1', startY);
+        line.setAttribute('x2', endX);
+        line.setAttribute('y2', startY);
+        line.setAttribute('stroke', '#ccc');
+        line.setAttribute('stroke-width', '1.5');
+        svg.appendChild(line);
+
+        // Start dot — grey
+        const startDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        startDot.setAttribute('cx', startX);
+        startDot.setAttribute('cy', startY);
+        startDot.setAttribute('r', '3');
+        startDot.setAttribute('fill', '#999');
+        svg.appendChild(startDot);
+
+        // End dot — red if overdue, grey otherwise
+        const endDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        endDot.setAttribute('cx', endX);
+        endDot.setAttribute('cy', startY);
+        endDot.setAttribute('r', '3');
+        endDot.setAttribute('fill', isOverdue ? '#c44' : '#999');
+        svg.appendChild(endDot);
+
+        // Suspend segment — light blue line from overdue dot to freeze date
+        if (suspendDate) {
+          const clampedSuspend = suspendDate > maxDate ? maxDate : suspendDate;
+          const suspendKey = `${clampedSuspend.getMonth()}-${clampedSuspend.getDate()}-${lane}`;
+          const suspendSlot = slotsByKey[suspendKey];
+          if (suspendSlot) {
+            const suspendRect = suspendSlot.getBoundingClientRect();
+            const suspendX = suspendRect.left + suspendRect.width / 2 - timelineRect.left;
+
+            const suspendLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            suspendLine.setAttribute('x1', endX);
+            suspendLine.setAttribute('y1', startY);
+            suspendLine.setAttribute('x2', suspendX);
+            suspendLine.setAttribute('y2', startY);
+            suspendLine.setAttribute('stroke', 'lightblue');
+            suspendLine.setAttribute('stroke-width', '1.5');
+            svg.appendChild(suspendLine);
+
+            // Grace extension — dashed line from original freeze to effective freeze + emoji
+            if (graceFreezeDate) {
+              const clampedGrace = graceFreezeDate > maxDate ? maxDate : graceFreezeDate;
+              const graceKey = `${clampedGrace.getMonth()}-${clampedGrace.getDate()}-${lane}`;
+              const graceSlot = slotsByKey[graceKey];
+              if (graceSlot) {
+                const graceRect = graceSlot.getBoundingClientRect();
+                const graceX = graceRect.left + graceRect.width / 2 - timelineRect.left;
+
+                // Midpoint dot at original freeze
+                const midDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                midDot.setAttribute('cx', suspendX);
+                midDot.setAttribute('cy', startY);
+                midDot.setAttribute('r', '2.5');
+                midDot.setAttribute('fill', 'lightblue');
+                svg.appendChild(midDot);
+
+                // Dashed line to grace date
+                const graceLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                graceLine.setAttribute('x1', suspendX);
+                graceLine.setAttribute('y1', startY);
+                graceLine.setAttribute('x2', graceX);
+                graceLine.setAttribute('y2', startY);
+                graceLine.setAttribute('stroke', 'lightblue');
+                graceLine.setAttribute('stroke-width', '1.5');
+                graceLine.setAttribute('stroke-dasharray', '4 3');
+                svg.appendChild(graceLine);
+
+                // Freeze emoji at grace date
+                const emoji = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                emoji.setAttribute('x', graceX);
+                emoji.setAttribute('y', startY);
+                emoji.setAttribute('text-anchor', 'middle');
+                emoji.setAttribute('dominant-baseline', 'central');
+                emoji.setAttribute('font-size', '14');
+                emoji.setAttribute('style', 'user-select: none;');
+                emoji.textContent = '\u{1F9CA}';
+                svg.appendChild(emoji);
+              } else {
+                // No grace slot visible — just draw the normal suspend dot
+                const suspendDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                suspendDot.setAttribute('cx', suspendX);
+                suspendDot.setAttribute('cy', startY);
+                suspendDot.setAttribute('r', '3');
+                suspendDot.setAttribute('fill', 'lightblue');
+                svg.appendChild(suspendDot);
+              }
+            } else {
+              const suspendDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              suspendDot.setAttribute('cx', suspendX);
+              suspendDot.setAttribute('cy', startY);
+              suspendDot.setAttribute('r', '3');
+              suspendDot.setAttribute('fill', 'lightblue');
+              svg.appendChild(suspendDot);
+            }
+          }
+        }
+      });
+    }
+
+    // Receipt tooltip hover
+    document.addEventListener('mouseover', e => {
+      const marker = e.target.closest('.expense-circle');
+      if (!marker) return;
+      const mi = parseInt(marker.dataset.monthIndex);
+      const dd = parseInt(marker.dataset.day);
+      const receipt = receiptData[mi]?.[dd];
+      if (!receipt) return;
+
+      const date = new Date(2026, mi, dd);
+      const dayName = days[date.getDay()];
+      const monthName = months.find(m => m.index === mi)?.name || '';
+
+      // Check compliance status
+      let complianceHtml = '';
+      const curVal = currentDateSelect.value;
+      if (curVal) {
+        const overdueDays = getOverdueDays();
+        const [cm, cd] = curVal.split('-').map(Number);
+        const curD = new Date(2026, cm, cd);
+        const expD = new Date(2026, mi, dd);
+        const daysSince = Math.round((curD - expD) / (1000 * 60 * 60 * 24));
+        if (daysSince >= overdueDays) {
+          complianceHtml = `<div style="font-size:11px;color:#c44;margin-top:4px;">Non-compliant — ${daysSince}d since expense</div>`;
+        } else if (daysSince >= 0) {
+          const daysLeft = overdueDays - daysSince;
+          complianceHtml = `<div style="font-size:11px;color:#a3a3a3;margin-top:4px;">${daysLeft}d left to submit docs</div>`;
+        }
+      }
+
+      receiptTooltip.innerHTML =
+        `<div class="receipt-date">${dayName}, ${monthName} ${dd}</div>` +
+        `<div class="receipt-row"><span class="receipt-vendor">${receipt.vendor}</span><span class="receipt-amount">${receipt.amount}</span></div>` +
+        `<div class="receipt-category">${receipt.category}</div>` +
+        complianceHtml;
+
+      const rect = marker.getBoundingClientRect();
+      receiptTooltip.style.left = `${rect.left + rect.width / 2 - 100}px`;
+      receiptTooltip.style.top = `${rect.top - 80}px`;
+      receiptTooltip.classList.add('visible');
+    });
+
+    document.addEventListener('mouseout', e => {
+      if (e.target.closest('.expense-circle')) {
+        receiptTooltip.classList.remove('visible');
+      }
+    });
+
+    // Tooltip positioning
+    function showTooltip(tick) {
+      const rect = tick.getBoundingClientRect();
+      tooltip.textContent = tick.dataset.date;
+      tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+      tooltip.style.top = `${rect.top - 36}px`;
+      tooltip.classList.add('visible');
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove('visible');
+    }
+
+    // Delegated events on each .ticks container
+    document.querySelectorAll('.ticks').forEach(container => {
+      container.addEventListener('mouseover', e => {
+        const tick = e.target.closest('.tick:not(.disabled)');
+        if (tick) {
+          showTooltip(tick);
+          playTick();
+        }
+      });
+
+      container.addEventListener('mouseout', e => {
+        const tick = e.target.closest('.tick');
+        if (tick) hideTooltip();
+      });
+    });
+
+    // Render freeze selections, skipping months where current date is past the freeze date
+    function updateFreezeSelection() {
+      document.querySelectorAll('.tick.selected').forEach(t => t.classList.remove('selected'));
+      document.querySelectorAll('.freeze-label').forEach(l => l.remove());
+      const day = parseInt(freezeSelect.value);
+      if (!day) return;
+
+      let curMonth = null, curDay = null;
+      if (currentDateSelect.value) {
+        [curMonth, curDay] = currentDateSelect.value.split('-').map(Number);
+      }
+
+      months.forEach(month => {
+        let d = day;
+        const dow = new Date(2026, month.index, d).getDay();
+        if (dow === 6) d += 2;
+        else if (dow === 0) d += 1;
+        if (d > month.days) return;
+
+        // Skip if current date is past this month's freeze date
+        if (curMonth !== null) {
+          if (curMonth > month.index || (curMonth === month.index && curDay > d)) return;
+        }
+
+        const group = timeline.children[months.indexOf(month)];
+        const tick = group.querySelector(`.tick[data-day="${d}"]`);
+        if (tick) {
+          tick.classList.add('selected');
+          const label = document.createElement('span');
+          label.className = 'freeze-label';
+          const dayName = days[new Date(2026, month.index, d).getDay()].slice(0, 3);
+          label.textContent = `${dayName} ${d}`;
+          tick.appendChild(label);
+        }
+      });
+    }
+
+    // Find the next freeze date (as Date) on or after a given date
+    function getNextFreezeDate(curDate) {
+      const freezeDay = parseInt(freezeSelect.value);
+      if (!freezeDay) return null;
+      for (const month of months) {
+        let d = freezeDay;
+        const dow = new Date(2026, month.index, d).getDay();
+        if (dow === 6) d += 2;
+        else if (dow === 0) d += 1;
+        if (d > month.days) continue;
+        const freezeDate = new Date(2026, month.index, d);
+        if (freezeDate >= curDate) return freezeDate;
+      }
+      return null;
+    }
+
+    // Current date selection
+    function updateCurrentDate() {
+      document.querySelectorAll('.tick.current').forEach(t => t.classList.remove('current'));
+      document.querySelectorAll('.countdown-label').forEach(l => l.remove());
+      const val = currentDateSelect.value;
+      if (!val) { updateFreezeSelection(); renderDollarMarkers(); return; }
+      const [monthIndex, day] = val.split('-').map(Number);
+      const group = timeline.children[monthIndex];
+      const tick = group.querySelector(`.tick[data-day="${day}"]`);
+      if (tick) {
+        tick.classList.add('current');
+        const curDate = new Date(2026, monthIndex, day);
+        const nextFreeze = getNextFreezeDate(curDate);
+        if (nextFreeze) {
+          const diff = Math.round((nextFreeze - curDate) / (1000 * 60 * 60 * 24));
+          const label = document.createElement('span');
+          label.className = 'countdown-label';
+          label.textContent = `${diff}d`;
+          tick.appendChild(label);
+        }
+      }
+      updateFreezeSelection();
+      renderDollarMarkers();
+    }
+
+    // --- Exclude multi-select ---
+    const excludeData = [
+      { type: 'group', id: 'accounting', label: 'Accounting', count: 3 },
+      { type: 'group', id: 'bizdev', label: 'Business development', count: 5 },
+      { type: 'group', id: 'compliance', label: 'Compliance', count: 2 },
+      { type: 'group', id: 'engineering', label: 'Engineering', count: 34 },
+      { type: 'group', id: 'executives', label: 'Executives', count: 10 },
+      { type: 'person', id: 'annie-shih', label: 'Annie Shih' },
+      { type: 'person', id: 'john-doe', label: 'John Doe' },
+    ];
+
+    const groupIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+    const personIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+    const excludeTrigger = document.getElementById('exclude-trigger');
+    const excludeDropdown = document.getElementById('exclude-dropdown');
+    const excludeSearch = document.getElementById('exclude-search');
+    const excludeList = document.getElementById('exclude-list');
+    const excludeSelections = new Set();
+
+    function renderExcludeList(filter = '') {
+      const q = filter.toLowerCase();
+      const filtered = excludeData.filter(item =>
+        item.label.toLowerCase().includes(q)
+      );
+      if (filtered.length === 0) {
+        excludeList.innerHTML = '<div class="exclude-empty">No results</div>';
+        return;
+      }
+      excludeList.innerHTML = filtered.map(item => {
+        const icon = item.type === 'group' ? groupIcon : personIcon;
+        const countStr = item.count != null ? ` (${item.count})` : '';
+        const sel = excludeSelections.has(item.id) ? ' selected' : '';
+        return `<div class="exclude-item${sel}" data-id="${item.id}">
+          <span class="exclude-item-icon">${icon}</span>
+          <span class="exclude-item-label">${item.label}${countStr}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function renderExcludeTrigger() {
+      if (excludeSelections.size === 0) {
+        excludeTrigger.innerHTML = '<span class="exclude-placeholder">ex. John Doe or Executives</span>';
+        excludeTrigger.classList.remove('has-selection');
+        return;
+      }
+      excludeTrigger.classList.add('has-selection');
+      const chips = Array.from(excludeSelections).map(id => {
+        const item = excludeData.find(d => d.id === id);
+        if (!item) return '';
+        return `<span class="exclude-chip" data-id="${id}">${item.label}<button class="exclude-chip-remove" data-id="${id}">&times;</button></span>`;
+      }).join('');
+      excludeTrigger.innerHTML = chips;
+    }
+
+    function toggleExcludeDropdown(open) {
+      if (open) {
+        excludeDropdown.classList.add('open');
+        excludeTrigger.classList.add('open');
+        excludeSearch.value = '';
+        renderExcludeList();
+        excludeSearch.focus();
+      } else {
+        excludeDropdown.classList.remove('open');
+        excludeTrigger.classList.remove('open');
+      }
+    }
+
+    excludeTrigger.addEventListener('click', e => {
+      if (e.target.closest('.exclude-chip-remove')) {
+        const id = e.target.closest('.exclude-chip-remove').dataset.id;
+        excludeSelections.delete(id);
+        renderExcludeTrigger();
+        renderExcludeList(excludeSearch.value);
+        updateScenarioText();
+        e.stopPropagation();
+        return;
+      }
+      const isOpen = excludeDropdown.classList.contains('open');
+      toggleExcludeDropdown(!isOpen);
+    });
+
+    excludeSearch.addEventListener('input', () => {
+      renderExcludeList(excludeSearch.value);
+    });
+
+    excludeList.addEventListener('click', e => {
+      const item = e.target.closest('.exclude-item');
+      if (!item) return;
+      const id = item.dataset.id;
+      if (excludeSelections.has(id)) {
+        excludeSelections.delete(id);
+      } else {
+        excludeSelections.add(id);
+      }
+      renderExcludeTrigger();
+      renderExcludeList(excludeSearch.value);
+      updateScenarioText();
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#exclude-select')) {
+        toggleExcludeDropdown(false);
+      }
+    });
+
+    renderExcludeList();
+
+    // --- Event listeners ---
+    currentDateSelect.addEventListener('change', () => {
+      updateCurrentDate();
+      updateScenarioText();
+    });
+    freezeSelect.addEventListener('change', () => {
+      updateCurrentDate();
+      updateScenarioText();
+    });
+
+    // --- Toggle logic ---
+    const deadlinesToggle = document.getElementById('deadlines-toggle');
+    const deadlinesHeader = document.getElementById('deadlines-header');
+    const deadlinesBody = document.getElementById('deadlines-body');
+    const suspendToggle = document.getElementById('suspend-toggle');
+    const suspendHeader = document.getElementById('suspend-header');
+    const suspendBody = document.getElementById('suspend-body');
+    const overdueSelect = document.getElementById('overdue-after');
+    const customOverdueRow = document.getElementById('custom-overdue-row');
+
+    let deadlinesOn = false;
+    let suspendOn = false;
+
+    deadlinesToggle.addEventListener('click', () => {
+      deadlinesOn = !deadlinesOn;
+      deadlinesToggle.classList.toggle('on', deadlinesOn);
+      deadlinesHeader.classList.toggle('active', deadlinesOn);
+      deadlinesBody.classList.toggle('visible', deadlinesOn);
+
+      if (!deadlinesOn) {
+        // Turn off auto-suspend too
+        suspendOn = false;
+        suspendToggle.classList.remove('on');
+        suspendToggle.classList.add('disabled');
+        suspendHeader.classList.remove('active');
+        suspendBody.classList.remove('visible');
+      } else {
+        suspendToggle.classList.remove('disabled');
+      }
+      renderDollarMarkers();
+    });
+
+    suspendToggle.addEventListener('click', () => {
+      if (!deadlinesOn) return;
+      suspendOn = !suspendOn;
+      suspendToggle.classList.toggle('on', suspendOn);
+      suspendHeader.classList.toggle('active', suspendOn);
+      suspendBody.classList.toggle('visible', suspendOn);
+      renderDollarMarkers();
+    });
+
+    overdueSelect.addEventListener('change', () => {
+      customOverdueRow.classList.toggle('visible', overdueSelect.value === 'custom');
+      renderDollarMarkers();
+    });
+
+    document.getElementById('custom-overdue-days').addEventListener('input', () => {
+      renderDollarMarkers();
+    });
+
+    window.addEventListener('resize', () => {
+      if (deadlinesOn) renderDollarMarkers();
+    });
+
+    // --- Scenario text ---
+    const scenarioSection = document.querySelector('.scenario-section');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    // Derive expense days from receiptData
+    const expensesByMonth = {};
+    for (const [mi, receipts] of Object.entries(receiptData)) {
+      expensesByMonth[parseInt(mi)] = Object.keys(receipts).map(Number).sort((a, b) => a - b);
+    }
+
+    function ordinal(n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    function formatFreezeDate(date) {
+      const dayName = days[date.getDay()];
+      const mon = months.find(m => m.index === date.getMonth());
+      return `${dayName}, ${mon ? mon.name : ''} ${date.getDate()}`;
+    }
+
+    // Exact @geist-ui/icons SVGs (stroke 1.5, geometric precision, 24x24 viewBox)
+    const gi = (inner) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision">${inner}</svg>`;
+    const geistIcons = {
+      cloudSnow: gi('<path d="M20 17.58A5 5 0 0018 8h-1.26A8 8 0 104 16.25"/><path d="M8 16h.01M8 20h.01M12 18h.01M12 22h.01M16 16h.01M16 20h.01"/>'),
+      dollarSign: gi('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>'),
+      clock: gi('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'),
+      alertTriangle: gi('<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/>'),
+      checkInCircle: gi('<path d="M8 11.857l2.5 2.5L15.857 9M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z"/>'),
+      shieldOff: gi('<path d="M19.69 14a6.9 6.9 0 00.31-2V5l-8-3-3.16 1.18M4.73 4.73L4 5v7c0 6 8 10 8 10a20.29 20.29 0 005.62-4.38M1 1l22 22"/>'),
+      creditCard: gi('<rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><path d="M1 10h22"/>'),
+    };
+
+    function ruleBlock(icon, content, delay) {
+      return `<div class="rule-block" style="animation-delay: ${delay}ms">
+        <span class="rule-icon">${icon}</span>
+        <span class="rule-content">${content}</span>
+      </div>`;
+    }
+
+    function updateScenarioText() {
+      const freezeDay = parseInt(freezeSelect.value);
+      const curVal = currentDateSelect.value;
+
+      if (!curVal || !freezeDay) {
+        scenarioSection.innerHTML = '<span class="scenario-placeholder">Select current date and auto-freeze date to see the scenario.</span>';
+        return;
+      }
+
+      const [monthIndex, day] = curVal.split('-').map(Number);
+      const curDate = new Date(2026, monthIndex, day);
+      const nextFreeze = getNextFreezeDate(curDate);
+
+      if (!nextFreeze) {
+        scenarioSection.innerHTML = '<span class="scenario-placeholder">No upcoming freeze date in the visible timeline.</span>';
+        return;
+      }
+
+      // Grace period: if current date is within 3 days of freeze, extend by 14 days
+      const daysToFreeze = Math.round((nextFreeze - curDate) / (1000 * 60 * 60 * 24));
+      const graceApplied = daysToFreeze <= 3;
+      let effectiveFreeze = nextFreeze;
+      if (graceApplied) {
+        effectiveFreeze = new Date(nextFreeze.getTime() + 14 * 24 * 60 * 60 * 1000);
+      }
+      const daysUntilFreeze = Math.round((effectiveFreeze - curDate) / (1000 * 60 * 60 * 24));
+      const freezeDateStr = formatFreezeDate(effectiveFreeze);
+      const originalFreezeStr = formatFreezeDate(nextFreeze);
+
+      const evalMonthIndex = nextFreeze.getMonth() === 0 ? 11 : nextFreeze.getMonth() - 1;
+      const evalMonthName = monthNames[evalMonthIndex];
+      const allExpenses = expensesByMonth[evalMonthIndex] || [];
+      const expenses = allExpenses.filter(d => {
+        const expDate = new Date(2026, evalMonthIndex, d);
+        return expDate <= curDate;
+      });
+
+      // Split into non-compliant (7+ days old) vs still compliant (< 7 days)
+      const nonCompliant = expenses.filter(d => {
+        const expDate = new Date(2026, evalMonthIndex, d);
+        const daysSince = Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
+        return daysSince >= 7;
+      });
+      const stillCompliant = expenses.filter(d => {
+        const expDate = new Date(2026, evalMonthIndex, d);
+        const daysSince = Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
+        return daysSince < 7;
+      });
+
+      const rules = [];
+      let i = 0;
+
+      // 1. Next freeze date
+      if (graceApplied) {
+        rules.push(ruleBlock(geistIcons.cloudSnow,
+          `Auto-freeze moved to <strong>${freezeDateStr}</strong> <span style="color:#a3a3a3">(14-day grace period from ${originalFreezeStr})</span>`, i++ * 60));
+      } else {
+        rules.push(ruleBlock(geistIcons.cloudSnow,
+          `Next auto-freeze on <strong>${freezeDateStr}</strong>`, i++ * 60));
+      }
+
+      // 2. Non-compliant expenses (7+ days without documentation)
+      if (nonCompliant.length > 0) {
+        const dateList = nonCompliant.map(d => ordinal(d)).join(', ');
+        rules.push(ruleBlock(geistIcons.alertTriangle,
+          `<strong>${nonCompliant.length}</strong> non-compliant expense${nonCompliant.length !== 1 ? 's' : ''} from ${evalMonthName} (${dateList}) — past 7-day compliance window`, i++ * 60));
+      }
+
+      // 3. Expenses still within compliance window
+      if (stillCompliant.length > 0) {
+        const dateList = stillCompliant.map(d => {
+          const expDate = new Date(2026, evalMonthIndex, d);
+          const daysLeft = 7 - Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
+          return `${ordinal(d)} <span style="color:#a3a3a3">(${daysLeft}d left)</span>`;
+        }).join(', ');
+        rules.push(ruleBlock(geistIcons.clock,
+          `<strong>${stillCompliant.length}</strong> expense${stillCompliant.length !== 1 ? 's' : ''} still within 7-day compliance window: ${dateList}`, i++ * 60));
+      }
+
+      if (expenses.length === 0) {
+        rules.push(ruleBlock(geistIcons.dollarSign,
+          `No recorded expenses from ${evalMonthName} to evaluate`, i++ * 60));
+      }
+
+      // 4. Compliance deadline
+      if (graceApplied) {
+        rules.push(ruleBlock(geistIcons.clock,
+          `<strong>${daysUntilFreeze} day${daysUntilFreeze !== 1 ? 's' : ''}</strong> remaining until auto-freeze <span style="color:#a3a3a3">(${daysToFreeze}d + 14d grace)</span>`, i++ * 60));
+      } else {
+        rules.push(ruleBlock(geistIcons.clock,
+          `<strong>${daysUntilFreeze} day${daysUntilFreeze !== 1 ? 's' : ''}</strong> remaining until auto-freeze`, i++ * 60));
+      }
+
+      // 5. Freeze action — only if there are non-compliant expenses
+      if (nonCompliant.length > 0) {
+        rules.push(ruleBlock(geistIcons.creditCard,
+          `<strong>${nonCompliant.length}</strong> card${nonCompliant.length !== 1 ? 's' : ''} will be frozen on <strong>${freezeDateStr}</strong> unless documentation is submitted`, i++ * 60));
+      } else {
+        rules.push(ruleBlock(geistIcons.checkInCircle,
+          `No cards currently subject to auto-freeze`, i++ * 60));
+      }
+
+      // 5. Exclusions (if any)
+      if (excludeSelections.size > 0) {
+        const names = Array.from(excludeSelections).map(id => {
+          const item = excludeData.find(d => d.id === id);
+          return item ? item.label : id;
+        });
+        const formatted = names.length === 1
+          ? `<strong>${names[0]}</strong>`
+          : names.slice(0, -1).map(n => `<strong>${n}</strong>`).join(', ') + ' and <strong>' + names[names.length - 1] + '</strong>';
+        rules.push(ruleBlock(geistIcons.shieldOff,
+          `${formatted} excluded from auto-freeze`, i++ * 60));
+      }
+
+      // 6. P-cards
+      rules.push(ruleBlock(geistIcons.creditCard,
+        `Purchasing cards (p-cards) are never subject to auto-freeze`, i++ * 60));
+
+      scenarioSection.innerHTML = rules.join('');
+    }
+
+    updateScenarioText();
+
+    // --- Persist settings to localStorage ---
+    const STORAGE_KEY = 'card-freeze-settings';
+
+    function saveSettings() {
+      const settings = {
+        currentDate: currentDateSelect.value,
+        freezeDate: freezeSelect.value,
+        overdueAfter: overdueSelect.value,
+        customOverdueDays: document.getElementById('custom-overdue-days').value,
+        deadlinesOn,
+        suspendOn,
+        excluded: Array.from(excludeSelections),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }
+
+    function restoreSettings() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const s = JSON.parse(raw);
+
+        if (s.freezeDate) freezeSelect.value = s.freezeDate;
+        if (s.currentDate) currentDateSelect.value = s.currentDate;
+        if (s.overdueAfter) {
+          overdueSelect.value = s.overdueAfter;
+          customOverdueRow.classList.toggle('visible', s.overdueAfter === 'custom');
+        }
+        if (s.customOverdueDays) document.getElementById('custom-overdue-days').value = s.customOverdueDays;
+
+        if (s.deadlinesOn) {
+          deadlinesOn = true;
+          deadlinesToggle.classList.add('on');
+          deadlinesHeader.classList.add('active');
+          deadlinesBody.classList.add('visible');
+          suspendToggle.classList.remove('disabled');
+        }
+        if (s.suspendOn && s.deadlinesOn) {
+          suspendOn = true;
+          suspendToggle.classList.add('on');
+          suspendHeader.classList.add('active');
+          suspendBody.classList.add('visible');
+        }
+
+        if (s.excluded && s.excluded.length) {
+          s.excluded.forEach(id => excludeSelections.add(id));
+          renderExcludeTrigger();
+        }
+
+        updateCurrentDate();
+        updateScenarioText();
+      } catch (e) { /* ignore corrupt data */ }
+    }
+
+    restoreSettings();
+
+    // Hook save into all change points
+    [currentDateSelect, freezeSelect, overdueSelect].forEach(el =>
+      el.addEventListener('change', saveSettings)
+    );
+    document.getElementById('custom-overdue-days').addEventListener('input', saveSettings);
+    deadlinesToggle.addEventListener('click', saveSettings);
+    suspendToggle.addEventListener('click', saveSettings);
+    // Patch exclude changes to also save
+    const origExcludeListClick = excludeList.onclick;
+    excludeList.addEventListener('click', saveSettings);
+    excludeTrigger.addEventListener('click', saveSettings);
+
+    // --- Reset button ---
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+
+      currentDateSelect.value = '';
+      freezeSelect.value = '';
+      overdueSelect.value = '7';
+      document.getElementById('custom-overdue-days').value = '';
+      customOverdueRow.classList.remove('visible');
+
+      deadlinesOn = false;
+      deadlinesToggle.classList.remove('on');
+      deadlinesHeader.classList.remove('active');
+      deadlinesBody.classList.remove('visible');
+
+      suspendOn = false;
+      suspendToggle.classList.remove('on');
+      suspendToggle.classList.add('disabled');
+      suspendHeader.classList.remove('active');
+      suspendBody.classList.remove('visible');
+
+      excludeSelections.clear();
+      renderExcludeTrigger();
+
+      updateCurrentDate();
+      updateScenarioText();
+    });
+
+    // Sound — Web Audio API
+    let audioCtx = null;
+    let lastSoundTime = 0;
+    const COOLDOWN = 40; // ms between sounds
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    document.addEventListener('pointerdown', ensureAudio, { once: true });
+
+    function emitTick() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.value = 1800;
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.04);
+    }
+
+    function playTick() {
+      const now = performance.now();
+      if (now - lastSoundTime < COOLDOWN) return;
+      lastSoundTime = now;
+
+      ensureAudio();
+      if (!audioCtx) return;
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().then(emitTick);
+      } else {
+        emitTick();
+      }
+    }
+  </script>
+  </div><!-- .app-content -->
+
+  <script>
+    const pwGate = document.getElementById('pw-gate');
+    const pwInput = document.getElementById('pw-input');
+    const appContent = document.getElementById('app-content');
+    const PW_HASH = '9db728d18b9d39baa098ec445a90ae97b43ea39c54f19ec7a0f903a116b0cc7f';
+
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    if (sessionStorage.getItem('pw-ok') === '1') {
+      pwGate.classList.add('hidden');
+      appContent.classList.add('visible');
+    }
+
+    pwInput.addEventListener('keydown', async e => {
+      if (e.key !== 'Enter') return;
+      const hash = await sha256(pwInput.value);
+      if (hash === PW_HASH) {
+        sessionStorage.setItem('pw-ok', '1');
+        pwGate.classList.add('hidden');
+        appContent.classList.add('visible');
+      } else {
+        pwInput.classList.add('error');
+        pwInput.value = '';
+        setTimeout(() => pwInput.classList.remove('error'), 400);
+      }
+    });
+  </script>
+</body>
+</html>
