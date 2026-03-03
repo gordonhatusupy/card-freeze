@@ -1032,7 +1032,8 @@
     for (let d = 3; d <= 28; d++) {
       const opt = document.createElement('option');
       opt.value = d;
-      opt.textContent = d;
+      const s = ['th','st','nd','rd'], v = d % 100;
+      opt.textContent = d + (s[(v-20)%10] || s[v] || s[0]);
       freezeSelect.appendChild(opt);
     }
 
