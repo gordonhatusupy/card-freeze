@@ -19,6 +19,7 @@
       background: #fff;
       display: flex;
       height: 100vh;
+      overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -33,6 +34,7 @@
       border: 1px solid #e5e5e7;
       flex-shrink: 0;
       width: 300px;
+      overflow-y: auto;
     }
 
     .main {
@@ -138,6 +140,66 @@
     .toggle.disabled {
       opacity: 0.35;
       cursor: not-allowed;
+    }
+
+    .sub-toggle-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .sub-toggle-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sub-toggle-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #171717;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .sub-toggle-desc {
+      font-size: 12px;
+      color: #999;
+      line-height: 1.4;
+      margin-top: 2px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .toggle-sm {
+      position: relative;
+      width: 32px;
+      height: 18px;
+      background: #e5e5e7;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 200ms ease;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .toggle-sm.on {
+      background: #171717;
+    }
+
+    .toggle-sm::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 200ms ease;
+    }
+
+    .toggle-sm.on::after {
+      transform: translateX(14px);
     }
 
     .section-body {
@@ -679,20 +741,33 @@
       flex-direction: column;
       gap: 0;
       font-family: 'Inter', sans-serif;
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 8px 16px;
+      margin-top: 4px;
+    }
+
+    .scenario-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 6px 0 2px;
     }
 
     .scenario-section .scenario-placeholder {
       font-size: 13px;
-      color: #a3a3a3;
-      padding: 8px 0;
+      color: #666;
+      padding: 4px 0;
     }
 
     .rule-block {
       display: flex;
-      align-items: baseline;
+      align-items: flex-start;
       gap: 10px;
       padding: 10px 0;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       opacity: 0;
       transform: translateY(4px);
       animation: ruleIn 300ms ease forwards;
@@ -709,8 +784,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #a3a3a3;
-      margin-top: 1px;
+      color: #666;
+      margin-top: 2px;
     }
 
     .rule-block .rule-icon svg {
@@ -722,18 +797,18 @@
       flex: 1;
       font-size: 13px;
       line-height: 1.5;
-      color: #525252;
+      color: #999;
     }
 
     .rule-block .rule-content strong {
-      color: #171717;
+      color: #e5e5e5;
       font-weight: 600;
     }
 
     .rule-block .rule-value {
       font-size: 13px;
       font-weight: 600;
-      color: #171717;
+      color: #e5e5e5;
       white-space: nowrap;
     }
 
@@ -874,6 +949,22 @@
             <input type="number" class="custom-number-input" id="custom-overdue-days" min="1" max="365" placeholder="Days">
             <span class="unit-label">days</span>
           </div>
+        </div>
+
+        <div class="sub-toggle-row">
+          <div class="sub-toggle-info">
+            <div class="sub-toggle-label">Send reminders</div>
+            <div class="sub-toggle-desc">Remind spenders at documentation deadline, 7 days after, 14 days after</div>
+          </div>
+          <div class="toggle-sm" id="reminders-toggle"></div>
+        </div>
+
+        <div class="sub-toggle-row">
+          <div class="sub-toggle-info">
+            <div class="sub-toggle-label">Notify managers</div>
+            <div class="sub-toggle-desc">Email spenders' managers 14 days after documentation deadline</div>
+          </div>
+          <div class="toggle-sm" id="notify-managers-toggle"></div>
         </div>
       </div>
     </div>
@@ -1550,6 +1641,23 @@
 
     let deadlinesOn = false;
     let suspendOn = false;
+    let remindersOn = false;
+    let notifyManagersOn = false;
+
+    const remindersToggle = document.getElementById('reminders-toggle');
+    const notifyManagersToggle = document.getElementById('notify-managers-toggle');
+
+    remindersToggle.addEventListener('click', () => {
+      remindersOn = !remindersOn;
+      remindersToggle.classList.toggle('on', remindersOn);
+      updateScenarioText();
+    });
+
+    notifyManagersToggle.addEventListener('click', () => {
+      notifyManagersOn = !notifyManagersOn;
+      notifyManagersToggle.classList.toggle('on', notifyManagersOn);
+      updateScenarioText();
+    });
 
     deadlinesToggle.addEventListener('click', () => {
       deadlinesOn = !deadlinesOn;
@@ -1568,6 +1676,7 @@
         suspendToggle.classList.remove('disabled');
       }
       renderDollarMarkers();
+      updateScenarioText();
     });
 
     suspendToggle.addEventListener('click', () => {
@@ -1577,15 +1686,18 @@
       suspendHeader.classList.toggle('active', suspendOn);
       suspendBody.classList.toggle('visible', suspendOn);
       renderDollarMarkers();
+      updateScenarioText();
     });
 
     overdueSelect.addEventListener('change', () => {
       customOverdueRow.classList.toggle('visible', overdueSelect.value === 'custom');
       renderDollarMarkers();
+      updateScenarioText();
     });
 
     document.getElementById('custom-overdue-days').addEventListener('input', () => {
       renderDollarMarkers();
+      updateScenarioText();
     });
 
     window.addEventListener('resize', () => {
@@ -1625,6 +1737,8 @@
       checkInCircle: gi('<path d="M8 11.857l2.5 2.5L15.857 9M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z"/>'),
       shieldOff: gi('<path d="M19.69 14a6.9 6.9 0 00.31-2V5l-8-3-3.16 1.18M4.73 4.73L4 5v7c0 6 8 10 8 10a20.29 20.29 0 005.62-4.38M1 1l22 22"/>'),
       creditCard: gi('<rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><path d="M1 10h22"/>'),
+      bell: gi('<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>'),
+      mail: gi('<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>'),
     };
 
     function ruleBlock(icon, content, delay) {
@@ -1639,7 +1753,7 @@
       const curVal = currentDateSelect.value;
 
       if (!curVal || !freezeDay) {
-        scenarioSection.innerHTML = '<span class="scenario-placeholder">Select current date and auto-freeze date to see the scenario.</span>';
+        scenarioSection.innerHTML = '<div class="scenario-title">Summary</div><span class="scenario-placeholder">Select current date and auto-freeze date to see the scenario.</span>';
         return;
       }
 
@@ -1648,7 +1762,7 @@
       const nextFreeze = getNextFreezeDate(curDate);
 
       if (!nextFreeze) {
-        scenarioSection.innerHTML = '<span class="scenario-placeholder">No upcoming freeze date in the visible timeline.</span>';
+        scenarioSection.innerHTML = '<div class="scenario-title">Summary</div><span class="scenario-placeholder">No upcoming freeze date in the visible timeline.</span>';
         return;
       }
 
@@ -1671,16 +1785,16 @@
         return expDate <= curDate;
       });
 
-      // Split into non-compliant (7+ days old) vs still compliant (< 7 days)
+      const overdueDays = getOverdueDays();
       const nonCompliant = expenses.filter(d => {
         const expDate = new Date(2026, evalMonthIndex, d);
         const daysSince = Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
-        return daysSince >= 7;
+        return daysSince >= overdueDays;
       });
       const stillCompliant = expenses.filter(d => {
         const expDate = new Date(2026, evalMonthIndex, d);
         const daysSince = Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
-        return daysSince < 7;
+        return daysSince < overdueDays;
       });
 
       const rules = [];
@@ -1699,18 +1813,18 @@
       if (nonCompliant.length > 0) {
         const dateList = nonCompliant.map(d => ordinal(d)).join(', ');
         rules.push(ruleBlock(geistIcons.alertTriangle,
-          `<strong>${nonCompliant.length}</strong> non-compliant expense${nonCompliant.length !== 1 ? 's' : ''} from ${evalMonthName} (${dateList}) — past 7-day compliance window`, i++ * 60));
+          `<strong>${nonCompliant.length}</strong> non-compliant expense${nonCompliant.length !== 1 ? 's' : ''} from ${evalMonthName} (${dateList}) — past ${overdueDays}-day compliance window`, i++ * 60));
       }
 
       // 3. Expenses still within compliance window
       if (stillCompliant.length > 0) {
         const dateList = stillCompliant.map(d => {
           const expDate = new Date(2026, evalMonthIndex, d);
-          const daysLeft = 7 - Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
+          const daysLeft = overdueDays - Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
           return `${ordinal(d)} <span style="color:#a3a3a3">(${daysLeft}d left)</span>`;
         }).join(', ');
         rules.push(ruleBlock(geistIcons.clock,
-          `<strong>${stillCompliant.length}</strong> expense${stillCompliant.length !== 1 ? 's' : ''} still within 7-day compliance window: ${dateList}`, i++ * 60));
+          `<strong>${stillCompliant.length}</strong> expense${stillCompliant.length !== 1 ? 's' : ''} still within ${overdueDays}-day compliance window: ${dateList}`, i++ * 60));
       }
 
       if (expenses.length === 0) {
@@ -1749,11 +1863,23 @@
           `${formatted} excluded from auto-freeze`, i++ * 60));
       }
 
-      // 6. P-cards
+      // 6. Reminders
+      if (remindersOn) {
+        rules.push(ruleBlock(geistIcons.bell,
+          `Reminders sent to spenders at documentation deadline, <strong>${overdueDays + 7}</strong> days, and <strong>${overdueDays + 14}</strong> days after expense`, i++ * 60));
+      }
+
+      // 7. Notify managers
+      if (notifyManagersOn) {
+        rules.push(ruleBlock(geistIcons.mail,
+          `Managers notified <strong>${overdueDays + 14} days</strong> after expense if documentation is still missing`, i++ * 60));
+      }
+
+      // 8. P-cards
       rules.push(ruleBlock(geistIcons.creditCard,
         `Purchasing cards (p-cards) are never subject to auto-freeze`, i++ * 60));
 
-      scenarioSection.innerHTML = rules.join('');
+      scenarioSection.innerHTML = '<div class="scenario-title">Summary</div>' + rules.join('');
     }
 
     updateScenarioText();
@@ -1770,6 +1896,8 @@
         deadlinesOn,
         suspendOn,
         excluded: Array.from(excludeSelections),
+        remindersOn,
+        notifyManagersOn,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     }
@@ -1807,6 +1935,15 @@
           renderExcludeTrigger();
         }
 
+        if (s.remindersOn) {
+          remindersOn = true;
+          remindersToggle.classList.add('on');
+        }
+        if (s.notifyManagersOn) {
+          notifyManagersOn = true;
+          notifyManagersToggle.classList.add('on');
+        }
+
         updateCurrentDate();
         updateScenarioText();
         // Bars depend on layout; re-render after the browser has painted
@@ -1823,6 +1960,8 @@
     document.getElementById('custom-overdue-days').addEventListener('input', saveSettings);
     deadlinesToggle.addEventListener('click', saveSettings);
     suspendToggle.addEventListener('click', saveSettings);
+    remindersToggle.addEventListener('click', saveSettings);
+    notifyManagersToggle.addEventListener('click', saveSettings);
     // Patch exclude changes to also save
     const origExcludeListClick = excludeList.onclick;
     excludeList.addEventListener('click', saveSettings);
@@ -1851,6 +1990,11 @@
 
       excludeSelections.clear();
       renderExcludeTrigger();
+
+      remindersOn = false;
+      remindersToggle.classList.remove('on');
+      notifyManagersOn = false;
+      notifyManagersToggle.classList.remove('on');
 
       updateCurrentDate();
       updateScenarioText();
