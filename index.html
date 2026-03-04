@@ -224,6 +224,91 @@
       padding-top: 0;
     }
 
+    .legend {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid #e5e5e7;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .legend-circle {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .legend-circle.non-compliant {
+      background: #fdd;
+      color: #c44;
+    }
+
+    .legend-circle.grace {
+      background: #e0f4ff;
+      font-size: 12px;
+    }
+
+    .legend-divider {
+      border-top: 1px solid #e5e5e7;
+      margin: 4px 0;
+    }
+
+    .legend-line {
+      width: 24px;
+      height: 2px;
+      flex-shrink: 0;
+      border-radius: 1px;
+    }
+
+    .legend-line.grey {
+      background: #ccc;
+    }
+
+    .legend-line.blue {
+      background: lightblue;
+    }
+
+    .legend-line-with-dot {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+    }
+
+    .legend-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.red {
+      background: #c44;
+    }
+
+    .legend-line.dashed {
+      background: repeating-linear-gradient(
+        90deg,
+        lightblue 0px,
+        lightblue 4px,
+        transparent 4px,
+        transparent 7px
+      );
+    }
+
     .custom-number-input {
       appearance: none;
       -moz-appearance: textfield;
@@ -1005,6 +1090,34 @@
         <!-- Scenario content will go here -->
       </div>
     </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-circle non-compliant">$</span>
+        <span>Expense overdue</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-circle non-compliant">🥶</span>
+        <span>Will be auto-suspended</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-circle grace">🧊</span>
+        <span>Extended grace period</span>
+      </div>
+      <div class="legend-divider"></div>
+      <div class="legend-item">
+        <span class="legend-line-with-dot"><span class="legend-line grey"></span><span class="legend-dot red"></span></span>
+        <span>Compliance deadline</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line blue"></span>
+        <span>Time until auto-suspend</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line blue dashed"></span>
+        <span>Grace period extension</span>
+      </div>
+    </div>
   </div>
   <div class="main">
     <div class="container">
@@ -1207,7 +1320,12 @@
         if (monthIndex === evalMonthIndex) circle.classList.add('eval');
         const daysSince = Math.round((curDate - expenseDate) / (1000 * 60 * 60 * 24));
         if (daysSince >= overdueDays) circle.classList.add('non-compliant');
-        circle.textContent = '$';
+        if (suspendOn && monthIndex === evalMonthIndex && daysSince >= overdueDays) {
+          circle.textContent = '\u{1F976}';
+          circle.style.fontSize = '13px';
+        } else {
+          circle.textContent = '$';
+        }
         circle.dataset.monthIndex = monthIndex;
         circle.dataset.day = day;
         circle.style.animationDelay = `${lane * 40}ms`;
@@ -1215,8 +1333,9 @@
 
         if (deadlinesOn) {
           const overdueDate = new Date(2026, monthIndex, day + overdueDays);
+          const isEval = monthIndex === evalMonthIndex;
           const nextMonth1st = new Date(2026, overdueDate.getMonth() + 1, 1);
-          const suspendDate = suspendOn ? getNextFreezeDate(nextMonth1st) : null;
+          const suspendDate = (suspendOn && isEval) ? getNextFreezeDate(nextMonth1st) : null;
           const hasGrace = graceFreezeDate && suspendDate && nextFreezeFromCur
             && suspendDate.getTime() === nextFreezeFromCur.getTime();
           barData.push({
@@ -1810,15 +1929,15 @@
           `Next auto-freeze on <strong>${freezeDateStr}</strong>`, i++ * 60));
       }
 
-      // 2. Non-compliant expenses (7+ days without documentation)
-      if (nonCompliant.length > 0) {
+      // 2. Non-compliant expenses — only when deadlines are on
+      if (deadlinesOn && nonCompliant.length > 0) {
         const dateList = nonCompliant.map(d => ordinal(d)).join(', ');
         rules.push(ruleBlock(geistIcons.alertTriangle,
           `<strong>${nonCompliant.length}</strong> non-compliant expense${nonCompliant.length !== 1 ? 's' : ''} from ${evalMonthName} (${dateList}) — past ${overdueDays}-day compliance window`, i++ * 60));
       }
 
-      // 3. Expenses still within compliance window
-      if (stillCompliant.length > 0) {
+      // 3. Expenses still within compliance window — only when deadlines are on
+      if (deadlinesOn && stillCompliant.length > 0) {
         const dateList = stillCompliant.map(d => {
           const expDate = new Date(2026, evalMonthIndex, d);
           const daysLeft = overdueDays - Math.round((curDate - expDate) / (1000 * 60 * 60 * 24));
@@ -1828,31 +1947,35 @@
           `<strong>${stillCompliant.length}</strong> expense${stillCompliant.length !== 1 ? 's' : ''} still within ${overdueDays}-day compliance window: ${dateList}`, i++ * 60));
       }
 
-      if (expenses.length === 0) {
+      if (deadlinesOn && expenses.length === 0) {
         rules.push(ruleBlock(geistIcons.dollarSign,
           `No recorded expenses from ${evalMonthName} to evaluate`, i++ * 60));
       }
 
-      // 4. Compliance deadline
-      if (graceApplied) {
-        rules.push(ruleBlock(geistIcons.clock,
-          `<strong>${daysUntilFreeze} day${daysUntilFreeze !== 1 ? 's' : ''}</strong> remaining until auto-freeze <span style="color:#a3a3a3">(${daysToFreeze}d + 14d grace)</span>`, i++ * 60));
-      } else {
-        rules.push(ruleBlock(geistIcons.clock,
-          `<strong>${daysUntilFreeze} day${daysUntilFreeze !== 1 ? 's' : ''}</strong> remaining until auto-freeze`, i++ * 60));
+      // 4. Countdown to freeze — only when auto-suspend is on
+      if (suspendOn) {
+        if (graceApplied) {
+          rules.push(ruleBlock(geistIcons.clock,
+            `<strong>${daysUntilFreeze} day${daysUntilFreeze !== 1 ? 's' : ''}</strong> remaining until auto-freeze <span style="color:#a3a3a3">(${daysToFreeze}d + 14d grace)</span>`, i++ * 60));
+        } else {
+          rules.push(ruleBlock(geistIcons.clock,
+            `<strong>${daysUntilFreeze} day${daysUntilFreeze !== 1 ? 's' : ''}</strong> remaining until auto-freeze`, i++ * 60));
+        }
       }
 
-      // 5. Freeze action — only if there are non-compliant expenses
-      if (nonCompliant.length > 0) {
-        rules.push(ruleBlock(geistIcons.creditCard,
-          `<strong>${nonCompliant.length}</strong> card${nonCompliant.length !== 1 ? 's' : ''} will be frozen on <strong>${freezeDateStr}</strong> unless documentation is submitted`, i++ * 60));
-      } else {
-        rules.push(ruleBlock(geistIcons.checkInCircle,
-          `No cards currently subject to auto-freeze`, i++ * 60));
+      // 5. Freeze action — only when auto-suspend is on
+      if (suspendOn) {
+        if (nonCompliant.length > 0) {
+          rules.push(ruleBlock(geistIcons.creditCard,
+            `<strong>${nonCompliant.length}</strong> card${nonCompliant.length !== 1 ? 's' : ''} will be frozen on <strong>${freezeDateStr}</strong> unless documentation is submitted`, i++ * 60));
+        } else {
+          rules.push(ruleBlock(geistIcons.checkInCircle,
+            `No cards currently subject to auto-freeze`, i++ * 60));
+        }
       }
 
-      // 5. Exclusions (if any)
-      if (excludeSelections.size > 0) {
+      // 6. Exclusions — only when auto-suspend is on
+      if (suspendOn && excludeSelections.size > 0) {
         const names = Array.from(excludeSelections).map(id => {
           const item = excludeData.find(d => d.id === id);
           return item ? item.label : id;
@@ -1864,21 +1987,23 @@
           `${formatted} excluded from auto-freeze`, i++ * 60));
       }
 
-      // 6. Reminders
+      // 7. Reminders
       if (remindersOn) {
         rules.push(ruleBlock(geistIcons.bell,
           `Reminders sent to spenders at documentation deadline, <strong>${overdueDays + 7}</strong> days, and <strong>${overdueDays + 14}</strong> days after expense`, i++ * 60));
       }
 
-      // 7. Notify managers
+      // 8. Notify managers
       if (notifyManagersOn) {
         rules.push(ruleBlock(geistIcons.mail,
           `Managers notified <strong>${overdueDays + 14} days</strong> after expense if documentation is still missing`, i++ * 60));
       }
 
-      // 8. P-cards
-      rules.push(ruleBlock(geistIcons.creditCard,
-        `Purchasing cards (p-cards) are never subject to auto-freeze`, i++ * 60));
+      // 9. P-cards — only when auto-suspend is on
+      if (suspendOn) {
+        rules.push(ruleBlock(geistIcons.creditCard,
+          `Purchasing cards (p-cards) are never subject to auto-freeze`, i++ * 60));
+      }
 
       scenarioSection.innerHTML = '<div class="scenario-title">Summary</div>' + rules.join('');
     }
